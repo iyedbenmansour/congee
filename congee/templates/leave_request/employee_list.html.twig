@@ -1,0 +1,54 @@
+{# templates/leave_request/employee_list.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}My Leave Requests{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <h1>My Leave Requests</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Confirmed</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in leaveRequests %}
+                <tr>
+                    <td>{{ request.id }}</td>
+                    <td>{{ request.startDate|date('Y-m-d') }}</td>
+                    <td>{{ request.endDate|date('Y-m-d') }}</td>
+                    <td>{{ request.leaveType }}</td>
+                    <td>{{ request.description }}</td>
+                    <td>{{ request.isConfirmed ? 'Yes' : 'No' }}</td>
+                    <td>
+                        <a href="{{ path('leave_request_edit', { id: request.id }) }}" class="btn btn-warning btn-sm">Edit</a>
+                        <form action="{{ path('leave_request_delete', { id: request.id }) }}" method="post" class="d-inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ request.id) }}">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</button>
+                        </form>
+                        {% if request.isConfirmed %}
+                            {% set onlineJob = onlineJobs[request.id] ?? null %}
+                            {% if onlineJob %}
+                                <a href="{{ path('online_job_view', { id: onlineJob.id }) }}" class="btn btn-info btn-sm mt-1">View Online Job</a>
+                            {% else %}
+                                <a href="{{ path('online_job_create', { leaveRequestId: request.id }) }}" class="btn btn-info btn-sm mt-1">Apply for Online Job</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No leave requests found</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

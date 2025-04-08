@@ -1,0 +1,26 @@
+{# templates/online_job/view.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Online Job Details{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <h1>Online Job Details</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h2>{{ onlineJob.title }}</h2>
+            <p class="mb-0">For leave request #{{ leaveRequest.id }}</p>
+        </div>
+        <div class="card-body">
+            <p><strong>Status:</strong> {{ onlineJob.isConfirmed ? 'Confirmed' : 'Pending' }}</p>
+            <p><strong>Start Date:</strong> {{ onlineJob.startDate|date('Y-m-d') }}</p>
+            <p><strong>End Date:</strong> {{ onlineJob.endDate|date('Y-m-d') }}</p>
+            <p><strong>Job Description:</strong></p>
+            <div class="border p-3 mb-3">{{ onlineJob.post|nl2br }}</div>
+            
+            <a href="{{ path('employee_leave_requests', {'employeeId': leaveRequest.employeeId}) }}" class="btn btn-secondary">Back to Leave Requests</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

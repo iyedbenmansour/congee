@@ -1,0 +1,71 @@
+{# templates/leave_request/company_list.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Company Leave Requests{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <h1>Company Leave Requests</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Employee ID</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Confirmed</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in leaveRequests %}
+                <tr>
+                    <td>{{ request.id }}</td>
+                    <td>{{ request.employeeId }}</td>
+                    <td>{{ request.startDate|date('Y-m-d') }}</td>
+                    <td>{{ request.endDate|date('Y-m-d') }}</td>
+                    <td>{{ request.leaveType }}</td>
+                    <td>{{ request.description }}</td>
+                    <td>{{ request.isConfirmed ? 'Yes' : 'No' }}</td>
+                    <td>
+                        {% if not request.isConfirmed %}
+                            <form action="{{ path('leave_request_confirm', { id: request.id }) }}" method="post" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('confirm' ~ request.id) }}">
+                                <button type="submit" class="btn btn-success btn-sm">Confirm</button>
+                            </form>
+                        {% else %}
+                            <form action="{{ path('leave_request_revoke', { id: request.id }) }}" method="post" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('revoke' ~ request.id) }}">
+                                <button type="submit" class="btn btn-warning btn-sm">Revoke</button>
+                            </form>
+                            
+                            {# Check if online job exists for this leave request #}
+                            {% if onlineJobs[request.id] is defined %}
+                                <a href="{{ path('online_job_view', { id: onlineJobs[request.id].id }) }}" 
+                                   class="btn btn-info btn-sm mt-1">
+                                    Show Online Job
+                                </a>
+                                
+                                <form action="{{ path('online_job_toggle_status', { id: onlineJobs[request.id].id }) }}" 
+                                      method="post" 
+                                      class="d-inline mt-1">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_status' ~ onlineJobs[request.id].id) }}">
+                                    <button type="submit" class="btn btn-{{ onlineJobs[request.id].isConfirmed ? 'warning' : 'success' }} btn-sm">
+                                        {{ onlineJobs[request.id].isConfirmed ? 'Mark Pending' : 'Confirm Job' }}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="8" class="text-center">No leave requests found</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
