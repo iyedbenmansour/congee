@@ -104,9 +104,7 @@ public function employeeLeaveRequests(int $employeeId, LeaveRequestRepository $l
         return $this->redirectToRoute('employee_leave_requests', ['employeeId' => $employeeId]);
     }
 
-  // src/Controller/LeaveRequestController.php
 
-// Update the companyLeaveRequests method:
 #[Route('/leave-requests/company/{companyId}', name: 'company_leave_requests', methods: ['GET'])]
 public function companyLeaveRequests(int $companyId, LeaveRequestRepository $leaveRequestRepository, EntityManagerInterface $entityManager): Response
 {
@@ -160,6 +158,45 @@ public function companyLeaveRequests(int $companyId, LeaveRequestRepository $lea
 
         $this->addFlash('success', 'Leave request confirmation revoked successfully!');
         return $this->redirectToRoute('company_leave_requests', ['companyId' => $leaveRequest->getCompanyId()]);
+    }
+
+
+    #[Route('/company/{companyId}/leave-ranking', name: 'company_leave_ranking')]
+    public function companyLeaveRanking(
+        int $companyId,
+        LeaveRequestRepository $leaveRequestRepository
+    ): Response {
+        // Get all leave requests for the company
+        $leaveRequests = $leaveRequestRepository->findBy(['companyId' => $companyId]);
+        
+        // Count leave requests per employee
+        $employeeLeaveCount = [];
+        foreach ($leaveRequests as $leaveRequest) {
+            $employeeId = $leaveRequest->getEmployeeId();
+            if (!isset($employeeLeaveCount[$employeeId])) {
+                $employeeLeaveCount[$employeeId] = 0;
+            }
+            $employeeLeaveCount[$employeeId]++;
+        }
+        
+        // Sort by leave count (ascending - least to most)
+        asort($employeeLeaveCount);
+        
+        // Prepare ranking data
+        $leaveRanking = [];
+        $rank = 1;
+        foreach ($employeeLeaveCount as $employeeId => $leaveCount) {
+            $leaveRanking[] = [
+                'rank' => $rank++,
+                'employeeId' => $employeeId,
+                'leaveCount' => $leaveCount
+            ];
+        }
+        
+        return $this->render('leave_request/company.html.twig', [
+            'companyId' => $companyId,
+            'leaveRanking' => $leaveRanking
+        ]);
     }
 
 }
