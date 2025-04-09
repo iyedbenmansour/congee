@@ -1,25 +1,128 @@
 {# templates/online_job/view.html.twig #}
 {% extends 'base.html.twig' %}
 
-{% block title %}Online Job Details{% endblock %}
+{% block title %}{{ onlineJob.title }} | Online Job Details{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .status-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 1rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .status-confirmed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-pending {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .job-description {
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+            border-left: 4px solid #6366f1;
+        }
+        .date-label {
+            color: #4b5563;
+            font-size: 0.875rem;
+        }
+        .date-value {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+    </style>
+{% endblock %}
 
 {% block body %}
-<div class="container mt-5">
-    <h1>Online Job Details</h1>
-    
-    <div class="card">
-        <div class="card-header">
-            <h2>{{ onlineJob.title }}</h2>
-            <p class="mb-0">For leave request #{{ leaveRequest.id }}</p>
+<div class="container my-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('employee_leave_requests', {'employeeId': leaveRequest.employeeId}) }}">Leave Requests</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Online Job Details</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">{{ onlineJob.title }}</h1>
+                <span class="status-badge {% if onlineJob.isConfirmed %}status-confirmed{% else %}status-pending{% endif %}">
+                    {{ onlineJob.isConfirmed ? 'Confirmed' : 'Pending Confirmation' }}
+                </span>
+            </div>
+            <p class="text-muted mb-0 mt-2">Associated with leave request #{{ leaveRequest.id }}</p>
         </div>
         <div class="card-body">
-            <p><strong>Status:</strong> {{ onlineJob.isConfirmed ? 'Confirmed' : 'Pending' }}</p>
-            <p><strong>Start Date:</strong> {{ onlineJob.startDate|date('Y-m-d') }}</p>
-            <p><strong>End Date:</strong> {{ onlineJob.endDate|date('Y-m-d') }}</p>
-            <p><strong>Job Description:</strong></p>
-            <div class="border p-3 mb-3">{{ onlineJob.post|nl2br }}</div>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <div class="date-label">Start Date</div>
+                        <div class="date-value">{{ onlineJob.startDate|date('l, F j, Y') }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <div class="date-label">End Date</div>
+                        <div class="date-value">{{ onlineJob.endDate|date('l, F j, Y') }}</div>
+                    </div>
+                </div>
+            </div>
             
-            <a href="{{ path('employee_leave_requests', {'employeeId': leaveRequest.employeeId}) }}" class="btn btn-secondary">Back to Leave Requests</a>
+            <div class="mb-4">
+                <div class="date-label mb-2">Duration</div>
+                <div class="date-value">
+                    {% set days = date(onlineJob.endDate).diff(date(onlineJob.startDate)).days + 1 %}
+                    {{ days }} day{% if days > 1 %}s{% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h5 class="mb-3">Job Description</h5>
+                <div class="job-description border p-4">{{ onlineJob.post|nl2br }}</div>
+            </div>
+            
+            {% if onlineJob.isConfirmed %}
+            <div class="alert alert-success" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                This online job has been confirmed and scheduled.
+            </div>
+            {% else %}
+            <div class="alert alert-warning" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                This online job is still pending confirmation.
+            </div>
+            {% endif %}
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ path('employee_leave_requests', {'employeeId': leaveRequest.employeeId}) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Leave Requests
+                </a>
+                
+                {% if not onlineJob.isConfirmed and is_granted('ROLE_MANAGER') %}
+                <div>
+                    <a href="{{ path('online_job_confirm', {'id': onlineJob.id}) }}" class="btn btn-success">
+                        <i class="bi bi-check-lg me-1"></i> Confirm Job
+                    </a>
+                    <a href="{{ path('online_job_edit', {'id': onlineJob.id}) }}" class="btn btn-primary ms-2">
+                        <i class="bi bi-pencil me-1"></i> Edit Details
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-footer bg-white py-3">
+            <div class="small text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                {% if onlineJob.createdAt is defined %}
+                    Created on {{ onlineJob.createdAt|date('F j, Y') }}
+                    {% if onlineJob.updatedAt is defined and onlineJob.updatedAt %}
+                        • Last updated {{ onlineJob.updatedAt|date('F j, Y') }}
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>

@@ -3,21 +3,207 @@
 
 {% block title %}Apply for Online Job{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .form-card {
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-header-custom {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .leave-dates {
+            background-color: #e9f2fe;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0.25rem;
+        }
+        .form-help-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .required-field label::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .char-counter {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-align: right;
+        }
+        .form-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
-<div class="container mt-5">
-    <h1>Apply for Online Job</h1>
-    <p class="mb-4">For leave request #{{ leaveRequest.id }} ({{ leaveRequest.startDate|date('Y-m-d') }} to {{ leaveRequest.endDate|date('Y-m-d') }})</p>
-    
-    {{ form_start(form) }}
-        {{ form_row(form.title) }}
-        {{ form_row(form.post) }}
-        {{ form_row(form.startDate) }}
-        {{ form_row(form.endDate) }}
-        
-        <div class="form-group">
-            <button type="submit" class="btn btn-primary">{{ button_label|default('Submit') }}</button>
-            <a href="{{ path('employee_leave_requests', {'employeeId': leaveRequest.employeeId}) }}" class="btn btn-secondary">Cancel</a>
+<div class="container my-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('employee_leave_requests', {'employeeId': leaveRequest.employeeId}) }}">Leave Requests</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Apply for Online Job</li>
+        </ol>
+    </nav>
+
+    <div class="card form-card mb-4">
+        <div class="card-header card-header-custom py-3">
+            <h1 class="h3 mb-0">Apply for Online Job</h1>
+            <p class="text-muted mb-0 mt-1">Complete the form below to submit an online job request</p>
         </div>
-    {{ form_end(form) }}
+        
+        <div class="card-body">
+            <div class="leave-dates p-3 mb-4">
+                <div class="mb-1"><strong>Leave Request Information:</strong></div>
+                <div>Request #{{ leaveRequest.id }}</div>
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted">Period:</span> 
+                        <strong>{{ leaveRequest.startDate|date('F j, Y') }}</strong> to 
+                        <strong>{{ leaveRequest.endDate|date('F j, Y') }}</strong>
+                    </div>
+                    <div class="mt-2 mt-sm-0">
+                        <span class="text-muted">Duration:</span>
+                        <strong>
+                            {% set days = date(leaveRequest.endDate).diff(date(leaveRequest.startDate)).days + 1 %}
+                            {{ days }} day{% if days > 1 %}s{% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                All fields marked with an asterisk (*) are required. Your online job dates must fall within your leave request period.
+            </div>
+            
+            {{ form_start(form) }}
+                <div class="mb-4 required-field">
+                    {{ form_label(form.title, 'Job Title') }}
+                    {{ form_widget(form.title, {'attr': {'class': 'form-control', 'placeholder': 'Enter a descriptive title for your online job'}}) }}
+                    <div class="form-help-text mt-1">Choose a clear, concise title that describes the work you'll be doing.</div>
+                    {{ form_errors(form.title) }}
+                </div>
+                
+                <div class="mb-4 required-field">
+                    {{ form_label(form.post, 'Job Description') }}
+                    {{ form_widget(form.post, {'attr': {'class': 'form-control', 'rows': 6, 'placeholder': 'Provide a detailed description of the online job you will be performing...'}}) }}
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <div class="form-help-text">Include details about your tasks, responsibilities, and expected outcomes.</div>
+                        <div class="char-counter">
+                            <span id="currentLength">0</span>/<span id="maxLength">1000</span> characters
+                        </div>
+                    </div>
+                    {{ form_errors(form.post) }}
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6 required-field">
+                        {{ form_label(form.startDate, 'Start Date') }}
+                        {{ form_widget(form.startDate, {'attr': {'class': 'form-control'}}) }}
+                        <div class="form-help-text mt-1">Must be within your leave period.</div>
+                        {{ form_errors(form.startDate) }}
+                    </div>
+                    
+                    <div class="col-md-6 required-field">
+                        {{ form_label(form.endDate, 'End Date') }}
+                        {{ form_widget(form.endDate, {'attr': {'class': 'form-control'}}) }}
+                        <div class="form-help-text mt-1">Must be within your leave period and after start date.</div>
+                        {{ form_errors(form.endDate) }}
+                    </div>
+                </div>
+                
+                {{ form_rest(form) }}
+            </div>
+            
+            <div class="card-footer form-footer py-3">
+                <div class="d-flex justify-content-between">
+                    <a href="{{ path('employee_leave_requests', {'employeeId': leaveRequest.employeeId}) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i> Submit
+                    </button>
+                </div>
+            </div>
+        {{ form_end(form) }}
+    </div>
+    
+    <div class="card form-card">
+        <div class="card-header card-header-custom py-3">
+            <h2 class="h5 mb-0">Guidelines for Online Jobs</h2>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li class="mb-2">Ensure your online job activities comply with company policies.</li>
+                <li class="mb-2">The online job must not conflict with your regular job responsibilities.</li>
+                <li class="mb-2">All online jobs require approval from your manager before they are confirmed.</li>
+                <li class="mb-2">You may be asked to provide progress updates during your online job period.</li>
+                <li>Any changes to approved online jobs must be resubmitted for approval.</li>
+            </ul>
+        </div>
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const textArea = document.querySelector('textarea[id$="_post"]');
+        const currentLength = document.getElementById('currentLength');
+        const maxLength = document.getElementById('maxLength');
+        
+        if (textArea && currentLength && maxLength) {
+            // Set initial count
+            currentLength.textContent = textArea.value.length;
+            
+            // Update count on input
+            textArea.addEventListener('input', function() {
+                currentLength.textContent = this.value.length;
+                
+                // Add visual feedback for character count
+                if (this.value.length > 900) {
+                    currentLength.style.color = '#dc3545';
+                } else {
+                    currentLength.style.color = '#6c757d';
+                }
+            });
+        }
+        
+        // Date validation helper
+        const startDateInput = document.querySelector('input[id$="_startDate"]');
+        const endDateInput = document.querySelector('input[id$="_endDate"]');
+        const leaveStartDate = new Date('{{ leaveRequest.startDate|date('Y-m-d') }}');
+        const leaveEndDate = new Date('{{ leaveRequest.endDate|date('Y-m-d') }}');
+        
+        if (startDateInput && endDateInput) {
+            startDateInput.addEventListener('change', validateDates);
+            endDateInput.addEventListener('change', validateDates);
+            
+            function validateDates() {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                
+                // Reset custom validity
+                startDateInput.setCustomValidity('');
+                endDateInput.setCustomValidity('');
+                
+                // Check start date is within leave period
+                if (startDate < leaveStartDate || startDate > leaveEndDate) {
+                    startDateInput.setCustomValidity('Start date must be within your leave period');
+                }
+                
+                // Check end date is within leave period
+                if (endDate < leaveStartDate || endDate > leaveEndDate) {
+                    endDateInput.setCustomValidity('End date must be within your leave period');
+                }
+                
+                // Check end date is after start date
+                if (endDate < startDate) {
+                    endDateInput.setCustomValidity('End date must be after start date');
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

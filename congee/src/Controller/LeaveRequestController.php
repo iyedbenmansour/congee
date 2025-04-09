@@ -160,7 +160,6 @@ public function companyLeaveRequests(int $companyId, LeaveRequestRepository $lea
         return $this->redirectToRoute('company_leave_requests', ['companyId' => $leaveRequest->getCompanyId()]);
     }
 
-
     #[Route('/company/{companyId}/leave-ranking', name: 'company_leave_ranking')]
     public function companyLeaveRanking(
         int $companyId,
@@ -182,14 +181,24 @@ public function companyLeaveRequests(int $companyId, LeaveRequestRepository $lea
         // Sort by leave count (ascending - least to most)
         asort($employeeLeaveCount);
         
-        // Prepare ranking data
+        // Prepare ranking data with comments
         $leaveRanking = [];
         $rank = 1;
+        $total = count($employeeLeaveCount);
+    
         foreach ($employeeLeaveCount as $employeeId => $leaveCount) {
+            // Assign comments based on rank or position
+            $comment = match ($rank) {
+                1 => '🏆 Best Attendance',
+                $total => '⚠️ Most Leaves Taken',
+                default => 'Average Attendance',
+            };
+    
             $leaveRanking[] = [
                 'rank' => $rank++,
                 'employeeId' => $employeeId,
-                'leaveCount' => $leaveCount
+                'leaveCount' => $leaveCount,
+                'comment' => $comment
             ];
         }
         
@@ -198,5 +207,6 @@ public function companyLeaveRequests(int $companyId, LeaveRequestRepository $lea
             'leaveRanking' => $leaveRanking
         ]);
     }
+    
 
 }

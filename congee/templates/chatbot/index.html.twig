@@ -1,155 +1,178 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}AI Assistant{% endblock %}
+
 {% block body %}
-    <div class="container">
-        <h1 class="title">AI Assistant</h1>
-        <div id="chatbox" class="chatbox">
-            <div class="message-list"></div>
-        </div>
-        <div class="input-group">
-            <input type="text" id="message" placeholder="Type your message..." class="message-input">
-            <button onclick="sendMessage()" class="send-button">Send</button>
-        </div>
+<div class="chat-container-full">
+    <h1 class="chat-title">💬 AI Assistant</h1>
+
+    <div id="chatbox" class="chatbox">
+        <div class="message-list"></div>
     </div>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
+    <div class="input-group">
+        <input type="text" id="message" placeholder="Type your message..." class="message-input">
+        <button onclick="sendMessage()" class="send-button">Send</button>
+    </div>
+</div>
 
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8fafc;
+        overflow: hidden;
+    }
 
-        .title {
-            text-align: center;
-            color: #333;
-        }
+    .chat-container-full {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        width: 100vw;
+    }
 
-        .chatbox {
-            height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-        }
+    .chat-title {
+        text-align: center;
+        color: #1f2937;
+        margin: 10px 0;
+        flex-shrink: 0;
+    }
 
-        .message-list {
-            display: flex;
-            flex-direction: column;
-        }
+    .chatbox {
+        flex: 1;
+        background: #f1f5f9;
+        padding: 20px;
+        overflow-y: auto;
+        border-top: 1px solid #cbd5e1;
+        border-bottom: 1px solid #cbd5e1;
+    }
 
-        .message {
-            margin-bottom: 10px;
-            padding: 5px;
-            border-radius: 5px;
-            max-width: 70%;
-        }
+    .message-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
 
-        .message.user {
-            align-self: flex-end;
-            background-color: #007bff;
-            color: white;
-        }
+    .message {
+        max-width: 75%;
+        padding: 10px 15px;
+        border-radius: 15px;
+        line-height: 1.4;
+        word-wrap: break-word;
+        font-size: 0.95rem;
+    }
 
-        .message.bot {
-            align-self: flex-start;
-            background-color: #e9ecef;
-            color: #333;
-        }
+    .message.user {
+        align-self: flex-end;
+        background: #3b82f6;
+        color: white;
+        border-bottom-right-radius: 0;
+    }
 
-        .timestamp {
-            font-size: 0.8em;
-            color: #999;
-        }
+    .message.bot {
+        align-self: flex-start;
+        background: #e2e8f0;
+        color: #1e293b;
+        border-bottom-left-radius: 0;
+    }
 
-        .input-group {
-            display: flex;
-            justify-content: space-between;
-        }
+    .timestamp {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 4px;
+        text-align: right;
+    }
 
-        .message-input {
-            width: 80%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+    .input-group {
+        display: flex;
+        gap: 10px;
+        padding: 15px;
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        box-shadow: 0 -1px 4px rgba(0,0,0,0.05);
+        flex-shrink: 0;
+    }
 
-        .send-button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+    .message-input {
+        flex: 1;
+        padding: 12px 15px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        font-size: 1rem;
+        outline: none;
+    }
 
-        .send-button:hover {
-            background-color: #0056b3;
-        }
+    .send-button {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s ease;
+    }
 
-        .loading {
-            text-align: center;
-            color: #999;
-        }
-    </style>
+    .send-button:hover {
+        background-color: #2563eb;
+    }
 
-    <script>
-        function appendMessage(sender, message, timestamp) {
-            const chatbox = document.querySelector('.message-list');
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', sender.toLowerCase());
-            messageDiv.innerHTML = `
-                <div>${message}</div>
-                <div class="timestamp">${timestamp}</div>
-            `;
-            chatbox.appendChild(messageDiv);
-            chatbox.scrollTop = chatbox.scrollHeight;
-        }
+    .loading {
+        font-style: italic;
+        color: #6b7280;
+        text-align: center;
+    }
+</style>
 
-        function sendMessage() {
-            const input = document.getElementById('message');
-            const message = input.value.trim();
-            if (!message) return;
+<script>
+    function appendMessage(sender, message, timestamp) {
+        const chatbox = document.querySelector('.message-list');
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', sender.toLowerCase());
+        messageDiv.innerHTML = `
+            <div>${message}</div>
+            <div class="timestamp">${timestamp}</div>
+        `;
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
 
-            const timestamp = new Date().toLocaleTimeString();
-            appendMessage('You', message, timestamp);
-            input.value = '';
+    function sendMessage() {
+        const input = document.getElementById('message');
+        const message = input.value.trim();
+        if (!message) return;
 
-            const loadingDiv = document.createElement('div');
-            loadingDiv.classList.add('loading');
-            loadingDiv.textContent = 'Loading...';
-            document.querySelector('.message-list').appendChild(loadingDiv);
+        const timestamp = new Date().toLocaleTimeString();
+        appendMessage('User', message, timestamp);
+        input.value = '';
 
-            fetch('/chat/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message })
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.querySelector('.loading').remove();
-                appendMessage('Bot', data.response, timestamp);
-            })
-            .catch(err => {
-                document.querySelector('.loading').remove();
-                appendMessage('Bot', 'Error connecting to the server.', timestamp);
-            });
-        }
+        const loadingDiv = document.createElement('div');
+        loadingDiv.classList.add('loading');
+        loadingDiv.textContent = 'AI is typing...';
+        document.querySelector('.message-list').appendChild(loadingDiv);
 
-        document.getElementById('message').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') sendMessage();
+        fetch('/chat/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.querySelector('.loading').remove();
+            appendMessage('Bot', data.response, timestamp);
+        })
+        .catch(err => {
+            document.querySelector('.loading').remove();
+            appendMessage('Bot', '❌ Error connecting to the server.', timestamp);
         });
-    </script>
-{% endblock %}  
+    }
+
+    document.getElementById('message').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+</script>
+{% endblock %}
