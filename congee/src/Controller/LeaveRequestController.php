@@ -12,19 +12,43 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+
 
 class LeaveRequestController extends AbstractController
 {
     #[Route('/leave-request/create', name: 'leave_request_create', methods: ['GET', 'POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function create(
+        Request $request, 
+        EntityManagerInterface $entityManager,
+        SluggerInterface $slugger
+    ): Response {
         $leaveRequest = new LeaveRequest();
-
         $form = $this->createForm(LeaveRequestType::class, $leaveRequest);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $leaveRequest->setConfirmed(false); // Default confirmation status is false
+            $pdfFile = $form->get('pdfFile')->getData();
+            
+            if ($pdfFile) {
+                $originalFilename = pathinfo($pdfFile->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$pdfFile->guessExtension();
+                
+                try {
+                    $pdfFile->move(
+                        $this->getParameter('pdf_directory'),
+                        $newFilename
+                    );
+                    $leaveRequest->setPdfPath($newFilename);
+                } catch (FileException $e) {
+                    $this->addFlash('error', 'There was an error uploading your PDF file.');
+                    return $this->redirectToRoute('leave_request_create');
+                }
+            }
+            
+            $leaveRequest->setConfirmed(false);
             $entityManager->persist($leaveRequest);
             $entityManager->flush();
 
@@ -38,34 +62,54 @@ class LeaveRequestController extends AbstractController
     }
 
   
-#[Route('/leave-requests/employee/{employeeId}', name: 'employee_leave_requests', methods: ['GET'])]
-public function employeeLeaveRequests(int $employeeId, LeaveRequestRepository $leaveRequestRepository, EntityManagerInterface $entityManager): Response
-{
-    $leaveRequests = $leaveRequestRepository->findBy(['employeeId' => $employeeId]);
-    
-    // Get all online jobs for these leave requests
-    $onlineJobs = [];
-    if (!empty($leaveRequests)) {
-        $leaveRequestIds = array_map(fn($lr) => $lr->getId(), $leaveRequests);
-        $onlineJobs = $entityManager->getRepository(OnlineJob::class)
-            ->findBy(['leaveRequestId' => $leaveRequestIds]);
+    #[Route('/leave-requests/employee/{employeeId}', name: 'employee_leave_requests', methods: ['GET'])]
+    public function employeeLeaveRequests(int $employeeId, LeaveRequestRepository $leaveRequestRepository, EntityManagerInterface $entityManager): Response
+    {
+        $leaveRequests = $leaveRequestRepository->findBy(['employeeId' => $employeeId]);
         
-        // Create a mapping of leaveRequestId => OnlineJob
-        $onlineJobs = array_reduce($onlineJobs, function($carry, $oj) {
-            $carry[$oj->getLeaveRequestId()] = $oj;
-            return $carry;
-        }, []);
-    }
-
-    return $this->render('leave_request/employee_list.html.twig', [
-        'leaveRequests' => $leaveRequests,
-        'onlineJobs' => $onlineJobs,
-    ]);
-}
+        // Calculate confirmed normal leave days
+        $confirmedNormalDays = 0;
+        foreach ($leaveRequests as $request) {
+            if ($request->isConfirmed() && $request->getLeaveType() === 'normal') {
+                $start = $request->getStartDate();
+                $end = $request->getEndDate();
+                $diff = $start->diff($end);
+                $confirmedNormalDays += $diff->days + 1; // +1 to include both start and end dates
+            }
+        }
+        
+        $remainingDays = 18 - $confirmedNormalDays;
+        
+        // Get all online jobs for these leave requests
+        $onlineJobs = [];
+        if (!empty($leaveRequests)) {
+            $leaveRequestIds = array_map(fn($lr) => $lr->getId(), $leaveRequests);
+            $onlineJobs = $entityManager->getRepository(OnlineJob::class)
+                ->findBy(['leaveRequestId' => $leaveRequestIds]);
+            
+            // Create a mapping of leaveRequestId => OnlineJob
+            $onlineJobs = array_reduce($onlineJobs, function($carry, $oj) {
+                $carry[$oj->getLeaveRequestId()] = $oj;
+                return $carry;
+            }, []);
+        }
+    
+        return $this->render('leave_request/employee_list.html.twig', [
+            'leaveRequests' => $leaveRequests,
+            'onlineJobs' => $onlineJobs,
+            'confirmedNormalDays' => $confirmedNormalDays,
+            'remainingDays' => $remainingDays
+        ]);
+    }   
 
     #[Route('/leave-request/edit/{id}', name: 'leave_request_edit', methods: ['GET', 'POST'])]
-    public function edit(int $id, Request $request, LeaveRequestRepository $leaveRequestRepository, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        int $id, 
+        Request $request, 
+        LeaveRequestRepository $leaveRequestRepository, 
+        EntityManagerInterface $entityManager,
+        SluggerInterface $slugger
+    ): Response {
         $leaveRequest = $leaveRequestRepository->find($id);
 
         if (!$leaveRequest) {
@@ -76,6 +120,34 @@ public function employeeLeaveRequests(int $employeeId, LeaveRequestRepository $l
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $pdfFile = $form->get('pdfFile')->getData();
+            
+            if ($pdfFile) {
+                $originalFilename = pathinfo($pdfFile->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$pdfFile->guessExtension();
+                
+                try {
+                    $pdfFile->move(
+                        $this->getParameter('pdf_directory'),
+                        $newFilename
+                    );
+                    
+                    // Remove old file if exists
+                    if ($leaveRequest->getPdfPath()) {
+                        $oldFilePath = $this->getParameter('pdf_directory').'/'.$leaveRequest->getPdfPath();
+                        if (file_exists($oldFilePath)) {
+                            unlink($oldFilePath);
+                        }
+                    }
+                    
+                    $leaveRequest->setPdfPath($newFilename);
+                } catch (FileException $e) {
+                    $this->addFlash('error', 'There was an error uploading your PDF file.');
+                    return $this->redirectToRoute('leave_request_edit', ['id' => $id]);
+                }
+            }
+
             $entityManager->flush();
 
             $this->addFlash('success', 'Leave request updated successfully!');
@@ -84,6 +156,7 @@ public function employeeLeaveRequests(int $employeeId, LeaveRequestRepository $l
 
         return $this->render('leave_request/edit.html.twig', [
             'form' => $form->createView(),
+            'pdfPath' => $leaveRequest->getPdfPath(),
         ]);
     }
 

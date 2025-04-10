@@ -1,42 +1,138 @@
+{# templates/leave_request/edit.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Edit Leave Request{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .form-card {
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-header-custom {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .form-help-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .required-field label::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .char-counter {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-align: right;
+        }
+        .form-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
-<div class="container mt-5">
-    <h1>Edit Leave Request</h1>
-    {{ form_start(form) }}
-        <div class="mb-3">
-            {{ form_label(form.employeeId) }}
-            {{ form_widget(form.employeeId, { 'attr': { 'class': 'form-control' } }) }}
-            {{ form_errors(form.employeeId) }}
+<div class="container my-5">
+    <div class="card form-card mb-4">
+        <div class="card-header card-header-custom py-3">
+            <h1 class="h3 mb-0">Edit Leave Request</h1>
+            <p class="text-muted mb-0 mt-1">Update the details of your leave request</p>
         </div>
-        <div class="mb-3">
-            {{ form_label(form.companyId) }}
-            {{ form_widget(form.companyId, { 'attr': { 'class': 'form-control' } }) }}
-            {{ form_errors(form.companyId) }}
+        
+        <div class="card-body">
+            {% if app.session.flashBag.has('success') %}
+                {% for msg in app.session.flashBag.get('success') %}
+                    <div class="alert alert-success">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+            
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Please provide accurate information for your leave request.
+            </div>
+
+            {{ form_start(form, {'attr': {'novalidate': 'novalidate', 'enctype': 'multipart/form-data'}}) }}
+                <div class="mb-4 required-field">
+                    {{ form_label(form.employeeId) }}
+                    {{ form_widget(form.employeeId, {'attr': {'class': 'form-control'}}) }}
+                    {{ form_errors(form.employeeId) }}
+                </div>
+
+                <div class="mb-4 required-field">
+                    {{ form_label(form.companyId) }}
+                    {{ form_widget(form.companyId, {'attr': {'class': 'form-control'}}) }}
+                    {{ form_errors(form.companyId) }}
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6 required-field">
+                        {{ form_label(form.startDate) }}
+                        {{ form_widget(form.startDate, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_errors(form.startDate) }}
+                    </div>
+                    <div class="col-md-6 required-field">
+                        {{ form_label(form.endDate) }}
+                        {{ form_widget(form.endDate, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_errors(form.endDate) }}
+                    </div>
+                </div>
+
+                <div class="mb-4 required-field">
+                    {{ form_label(form.leaveType) }}
+                    {{ form_widget(form.leaveType, {'attr': {'class': 'form-select'}}) }}
+                    {{ form_errors(form.leaveType) }}
+                </div>
+
+                <div class="mb-4 required-field">
+                    {{ form_label(form.description) }}
+                    {{ form_widget(form.description, {'attr': {'class': 'form-control', 'rows': 4}}) }}
+                    <div class="form-help-text">Explain the reason for your leave.</div>
+                    {{ form_errors(form.description) }}
+                </div>
+
+                <div class="mb-4">
+                    {{ form_label(form.pdfFile) }}
+                    {{ form_widget(form.pdfFile, {'attr': {'class': 'form-control'}}) }}
+                    {% if pdfPath %}
+                        <small class="form-text text-muted">Current file: 
+                            <a href="{{ asset('uploads/pdfs/' ~ pdfPath) }}" target="_blank">{{ pdfPath }}</a>
+                        </small>
+                    {% endif %}
+                    {{ form_errors(form.pdfFile) }}
+                </div>
+
+                {{ form_rest(form) }}
+
+                <div class="card-footer form-footer py-3">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ path('employee_leave_requests', {'employeeId': form.vars.value.employeeId}) }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            {{ form_end(form) }}
         </div>
-        <div class="mb-3">
-            {{ form_label(form.startDate) }}
-            {{ form_widget(form.startDate, { 'attr': { 'class': 'form-control' } }) }}
-            {{ form_errors(form.startDate) }}
+    </div>
+
+    <div class="card form-card">
+        <div class="card-header card-header-custom py-3">
+            <h2 class="h5 mb-0">Leave Request Guidelines</h2>
         </div>
-        <div class="mb-3">
-            {{ form_label(form.endDate) }}
-            {{ form_widget(form.endDate, { 'attr': { 'class': 'form-control' } }) }}
-            {{ form_errors(form.endDate) }}
+        <div class="card-body">
+            <ul class="mb-0">
+                <li class="mb-2">Submit leave requests 2 weeks in advance if possible.</li>
+                <li class="mb-2">All requests must be approved by a manager.</li>
+                <li class="mb-2">Emergency leave can be granted at discretion.</li>
+                <li class="mb-2">Ensure you have enough leave balance.</li>
+                <li>Changes to approved leave must be re-submitted.</li>
+            </ul>
         </div>
-        <div class="mb-3">
-            {{ form_label(form.description) }}
-            {{ form_widget(form.description, { 'attr': { 'class': 'form-control' } }) }}
-            {{ form_errors(form.description) }}
-        </div>
-        <div class="mb-3">
-            {{ form_label(form.leaveType) }}
-            {{ form_widget(form.leaveType, { 'attr': { 'class': 'form-control' } }) }}
-            {{ form_errors(form.leaveType) }}
-        </div>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-    {{ form_end(form) }}
+    </div>
 </div>
 {% endblock %}

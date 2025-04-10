@@ -17,6 +17,7 @@ class ChatbotController extends AbstractController
     public function __construct(HttpClientInterface $client)
     {
         $this->client = $client;
+        $this->openaiApiKey = 'sk-0uU-szt_zkNHIlY7TbQzvOL_YA2SzQT_2YrTzHaCGAT3BlbkFJlDZMZ_HrgoZYPTa7JjJ_5VLiPNHAa3ZKatJK2YysIA'; // replace this
     }
 
     #[Route('/chat', name: 'chatbot_index')]
@@ -57,4 +58,6 @@ class ChatbotController extends AbstractController
             return new JsonResponse(['response' => 'Error: ' . $e->getMessage()], 500);
         }
     }
+
+    
 }

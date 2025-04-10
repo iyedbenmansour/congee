@@ -1,14 +1,18 @@
 <?php
 
+// src/Form/LeaveRequestType.php
 namespace App\Form;
 
 use App\Entity\LeaveRequest;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 
 class LeaveRequestType extends AbstractType
 {
@@ -33,8 +37,30 @@ class LeaveRequestType extends AbstractType
                 'label' => 'Description',
                 'required' => false,
             ])
-            ->add('leaveType', TextType::class, [
+            ->add('leaveType', ChoiceType::class, [
                 'label' => 'Leave Type',
+                'choices' => [
+                    'Normal' => 'normal',
+                    'Maladie' => 'maladie',
+                    'Paternité' => 'paternite',
+                    'Maternité' => 'maternite'
+                ],
+                'placeholder' => 'Select a leave type',
+            ])
+            ->add('pdfFile', FileType::class, [
+                'label' => 'Supporting Document (PDF)',
+                'mapped' => false, // This field is not mapped to the entity
+                'required' => false,
+                'constraints' => [
+                    new File([
+                        'maxSize' => '1024k',
+                        'mimeTypes' => [
+                            'application/pdf',
+                            'application/x-pdf',
+                        ],
+                        'mimeTypesMessage' => 'Please upload a valid PDF document',
+                    ])
+                ],
             ]);
     }
 
