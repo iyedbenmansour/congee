@@ -232,16 +232,13 @@ public function companyLeaveRequests(int $companyId, LeaveRequestRepository $lea
         $this->addFlash('success', 'Leave request confirmation revoked successfully!');
         return $this->redirectToRoute('company_leave_requests', ['companyId' => $leaveRequest->getCompanyId()]);
     }
-
     #[Route('/company/{companyId}/leave-ranking', name: 'company_leave_ranking')]
     public function companyLeaveRanking(
         int $companyId,
         LeaveRequestRepository $leaveRequestRepository
     ): Response {
-        // Get all leave requests for the company
         $leaveRequests = $leaveRequestRepository->findBy(['companyId' => $companyId]);
-        
-        // Count leave requests per employee
+    
         $employeeLeaveCount = [];
         foreach ($leaveRequests as $leaveRequest) {
             $employeeId = $leaveRequest->getEmployeeId();
@@ -250,17 +247,14 @@ public function companyLeaveRequests(int $companyId, LeaveRequestRepository $lea
             }
             $employeeLeaveCount[$employeeId]++;
         }
-        
-        // Sort by leave count (ascending - least to most)
+    
         asort($employeeLeaveCount);
-        
-        // Prepare ranking data with comments
+    
         $leaveRanking = [];
         $rank = 1;
         $total = count($employeeLeaveCount);
     
         foreach ($employeeLeaveCount as $employeeId => $leaveCount) {
-            // Assign comments based on rank or position
             $comment = match ($rank) {
                 1 => '🏆 Best Attendance',
                 $total => '⚠️ Most Leaves Taken',
@@ -268,18 +262,22 @@ public function companyLeaveRequests(int $companyId, LeaveRequestRepository $lea
             };
     
             $leaveRanking[] = [
-                'rank' => $rank++,
+                'rank' => $rank,
                 'employeeId' => $employeeId,
                 'leaveCount' => $leaveCount,
-                'comment' => $comment
+                'comment' => $comment,
+                'position' => $rank <= 3 ? $rank : null,
             ];
+    
+            $rank++;
         }
-        
+    
         return $this->render('leave_request/company.html.twig', [
             'companyId' => $companyId,
             'leaveRanking' => $leaveRanking
         ]);
     }
+    
     
 
 }

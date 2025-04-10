@@ -1,49 +1,85 @@
-{# templates/leave_ranking/company.html.twig #}
+    {# templates/leave_request/company.html.twig #}
 
-{% extends 'base.html.twig' %}
+    {% extends 'baseBack.html.twig' %}
 
-{% block title %}Employee Leave Ranking - Company #{{ companyId }}{% endblock %}
+    {% block title %}Employee Leave Ranking - Company #{{ companyId }}{% endblock %}
 
-{% block body %}
-<div class="container mt-4">
-    <h1>Employee Leave Ranking for Company #{{ companyId }}</h1>
-    
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h2 class="h5 mb-0">Employees Ranked by Leave Requests (Least to Most)</h2>
-        </div>
-        
-        <div class="card-body">
-            {% if leaveRanking is empty %}
-                <div class="alert alert-info">No leave requests found for this company.</div>
-            {% else %}
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Employee ID</th>
-                            <th>Number of Leave Requests</th>
-                            <th>Comment</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ranking in leaveRanking %}
+    {% block body %}
+    <div class="container mt-5">
+        <h1 class="mb-4 text-center text-primary display-6">🏢 Leave Ranking - Company #{{ companyId }}</h1>
+
+        {% if leaveRanking is empty %}
+            <div class="alert alert-info">No leave requests found for this company.</div>
+        {% else %}
+
+            <div class="row justify-content-center mb-5">
+                {% for top in leaveRanking|slice(0, 3) %}
+                    <div class="col-md-4">
+                        <div class="card text-center shadow podium-card position-{{ top.position }}">
+                            <div class="card-body">
+                                <h2 class="display-5 fw-bold text-{{ top.position == 1 ? 'warning' : (top.position == 2 ? 'secondary' : 'info') }}">
+                                    #{{ top.rank }}
+                                </h2>
+                                <p class="fs-5 mb-1">Employee <strong>#{{ top.employeeId }}</strong></p>
+                                <p class="text-muted">Leave Requests: {{ top.leaveCount }}</p>
+                                <div class="badge bg-light text-dark mt-2">{{ top.comment }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="h5 mb-0">📋 Full Leave Ranking</h2>
+                </div>
+
+                <div class="card-body">
+                    <table class="table table-striped align-middle table-hover">
+                        <thead class="table-light">
                             <tr>
-                                <td>{{ ranking.rank }}</td>
-                                <td>{{ ranking.employeeId }}</td>
-                                <td>{{ ranking.leaveCount }}</td>
-                                <td>{{ ranking.comment }}</td>
+                                <th>Rank</th>
+                                <th>Employee ID</th>
+                                <th>Number of Leave Requests</th>
+                                <th>Comment</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
+                        </thead>
+                        <tbody>
+                            {% for ranking in leaveRanking %}
+                                <tr class="{% if ranking.position %}table-{{ ranking.position == 1 ? 'warning' : (ranking.position == 2 ? 'secondary' : 'info') }}{% endif %}">
+                                    <td>{{ ranking.rank }}</td>
+                                    <td>{{ ranking.employeeId }}</td>
+                                    <td>{{ ranking.leaveCount }}</td>
+                                    <td>{{ ranking.comment }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="mt-4 text-center">
+            <a href="/" class="btn btn-outline-secondary">← Back to Dashboard</a>
         </div>
     </div>
-    
-    <div class="mt-3">
-        <a href="/" class="btn btn-secondary">Back</a>
-    </div>
-</div>
-{% endblock %}
-    
+
+    <style>
+        .podium-card {
+            border-radius: 1rem;
+            transition: transform 0.3s ease;
+        }
+        .podium-card:hover {
+            transform: translateY(-5px);
+        }
+        .position-1 {
+            border-top: 4px solid gold;
+        }
+        .position-2 {
+            border-top: 4px solid silver;
+        }
+        .position-3 {
+            border-top: 4px solid #cd7f32;
+        }
+    </style>
+    {% endblock %}
